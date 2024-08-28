@@ -1,0 +1,124 @@
+﻿<h3>Sudoku solver</h3>
+<label>Please enter your sudoku problem:</label>
+<table class="table-bordered" width="450" height="100">
+    
+    @foreach(BoardRow row in BoardRows)
+    {
+        <tr align="center">
+            @foreach(BoardElement element in row.RowElements)
+            {
+                <td width="50" height="50"><input type="text" @oninput="ValidateElement(element.Id, element.Value)" @bind-value="element.Value" maxlength="1" placeholder="0" style="width: 100%; height: 100%; text-align:center;" /></td>
+            }
+        </tr>
+    }
+</table>
+<label style="width: 310px; text-align: left; font-size: 17px; font-family: bold; color: red;">@errorMessage </label>
+<button  @onclick="SolveSudoku" style="width: 120px; height: 40px; margin: 15px;">Solve sudoku</button>
+
+@code {
+    [Parameter] public List<BoardRow> BoardRows { get; set; }
+    private const int boardSize = 9;
+    private string errorMessage;
+    private EventCallback ValidateElement(int id, string input)
+    {
+        if(string.IsNullOrEmpty(input))
+        {
+            return EventCallback.Empty;
+        }
+        if(!int.TryParse(input, out int validInput))
+        {
+            errorMessage = "Warning: only numbers are allowed on input!";
+            foreach(BoardRow row in BoardRows)
+            {
+                foreach (BoardElement element in row.RowElements)
+                {
+                    if (element.Id == id)
+                    {
+                        element.Value = "";
+                        break;
+                    }
+                }
+            }
+        }
+        return EventCallback.Empty;
+    }
+
+    private int[][] ConvertBoard()
+    {
+        int[][] convertedBoard = new int[boardSize][];
+        foreach(BoardRow row in BoardRows)
+        {
+            int elementIndex = 0;
+            int[] convertedRow = new int[boardSize];
+            foreach(BoardElement element in row.RowElements)
+            {
+                if (string.IsNullOrEmpty(element.Value))
+                {
+                    element.Value = "";
+                    convertedRow[elementIndex] = 0;
+                }
+                else
+                {
+                    convertedRow[elementIndex] = int.Parse(element.Value);
+                }
+                elementIndex++;
+            }
+            convertedBoard[row.Id] = convertedRow;
+        }
+        return convertedBoard;
+    }
+
+    private void SolveSudoku()
+    {
+        int[][] board = ConvertBoard();
+        SudokuSolver solver = new SudokuSolver();
+        string unsolvableMsg = "Warning: This problem is unable to solve.";
+        if(!solver.ValidateBoard(board))
+        {
+            errorMessage = unsolvableMsg;
+            return;
+        }
+
+        board = solver.SolveBoard(board);
+        if(board == null)
+        {
+            errorMessage = unsolvableMsg;
+            return;
+        }
+        else
+        {
+            errorMessage = "";
+            foreach(BoardRow row in BoardRows)
+            {
+                int elementIndex = 0;
+                foreach(BoardElement element in row.RowElements)
+                {
+                    element.Value = board[row.Id][elementIndex].ToString();
+                    elementIndex++;
+                }
+            }
+        }
+    }
+
+    protected override async void OnInitialized()
+    {
+        BoardRows = new List<BoardRow>();
+        int boardElementCount = 0;
+        for (int rowCount = 0; rowCount < boardSize; rowCount++)
+        {
+            BoardRow newRow = new BoardRow();
+            newRow.Id = rowCount;
+
+            while(newRow.RowElements.Count < boardSize)
+            {
+                BoardElement newElement = new BoardElement();
+                newElement.Id = boardElementCount;
+                boardElementCount++;
+                newRow.RowElements.Add(newElement);
+            }
+
+            BoardRows.Add(newRow);
+        }
+    }
+
+}
