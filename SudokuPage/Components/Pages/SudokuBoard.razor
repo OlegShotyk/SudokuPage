@@ -1,13 +1,30 @@
-﻿<h3>Sudoku solver</h3>
+﻿@page "/sudokuboard"
+<div class="right" style="text-align:right;">
+    <a href="sudokuinfo" target="_blank">About</a>
+</div>
+<h3>Sudoku solver</h3>
 <label>Please enter your sudoku problem:</label>
-<table class="table-bordered" width="480" height="100">
+<table class="table-bordered" width="450" height="100">
     
     @foreach(BoardRow row in BoardRows)
     {
         <tr align="center">
             @foreach(BoardElement element in row.RowElements)
             {
-                <td width="50" height="50"><input class="text-center" type="number" list="options" min="1" max="9" @oninput="ValidateElement(element.Id, element.Value)" @bind-value="element.Value" maxlength="1" style="place-items:center; width: 100%; height: 100%; text-align:center;" /></td>
+                <td width="50" height="50"><select class="text-center" type="text" @oninput="ValidateElement(element.Id, element.Value)" @bind="element.Value" maxlength="1"style="place-items:center; background-color:@element.CellColor.ToString(); font-weight:@element.FontWeight; width: 100%; height: 100%; text-align-last:right; padding-right:3px;">
+                        <optgroup style="background-color:white;">
+                            <option selected disabled hidden value=""></option>
+                            <option hidden="@(element.IsReadonly)" value="1">1</option>
+                            <option hidden="@(element.IsReadonly)" value="2">2</option>
+                            <option hidden="@(element.IsReadonly)" value="3">3</option>
+                            <option hidden="@(element.IsReadonly)" value="4">4</option>
+                            <option hidden="@(element.IsReadonly)" value="5">5</option>
+                            <option hidden="@(element.IsReadonly)" value="6">6</option>
+                            <option hidden="@(element.IsReadonly)" value="7">7</option>
+                            <option hidden="@(element.IsReadonly)" value="8">8</option>
+                            <option hidden="@(element.IsReadonly)" value="9">9</option>
+                        </optgroup>
+                </select></td>
             }
         </tr>
     }
@@ -15,6 +32,17 @@
 
 <label style="width: 310px; text-align: left; font-size: 17px; font-family: bold; color: red;">@errorMessage </label>
 <label style="width: 310px; text-align: left; font-size: 17px; font-family: bold; color: green;">@message </label>
+<div>
+    <td>
+        <label style="font-size:18px; font-weight:semi-bold;">Please select game difficulty:</label><select @bind="hiddenValuesCount">
+          <optgroup>
+              <option selected value="20">Easy</option>
+              <option value="9" >Normal</option>
+              <option value="7">Hard</option>
+          </optgroup>
+        </select>
+    </td>
+</div>
 
 <td>
     <button @onclick="SolveSudoku" style="width: 120px; height: 40px; margin: 15px;">Solve sudoku</button>
@@ -23,24 +51,13 @@
     <button @onclick="CheckSudoku" style="width: 120px; height: 40px; margin: 15px;">Check sudoku</button>
 </td>
 
-<datalist id="options">
-    <option value="1"></option>
-    <option value="2"></option>
-    <option value="3"></option>
-    <option value="4"></option>
-    <option value="5"></option>
-    <option value="6"></option>
-    <option value="7"></option>
-    <option value="8"></option>
-    <option value="9"></option>
-</datalist>
-
 @code {
     [Parameter] public List<BoardRow> BoardRows { get; set; }
     private const int boardSize = 9;
     private const int squareSize = 3;
     private string errorMessage;
     private string message;
+    private int hiddenValuesCount = 20;
 
     private EventCallback ValidateElement(int id, string input)
     {
@@ -73,6 +90,9 @@
             foreach (BoardElement element in row.RowElements)
             {
                 element.Value = "";
+                element.IsReadonly = false;
+                element.FontWeight = 400;
+                element.CellColor = BoardElement.CellColors.white;
             }
         }
         errorMessage = "";
@@ -81,6 +101,7 @@
 
     private void GenerateGame()
     {
+        ClearBoard();
         errorMessage = "";
         message = "";
         bool sucessfulGeneration = false;
@@ -88,7 +109,7 @@
         {
             BoardGenerator generator = new BoardGenerator();
             generator.Board = BoardRows;
-            List<BoardRow> generatedGame = generator.NewGame();
+            List<BoardRow> generatedGame = generator.NewGame(hiddenValuesCount);
 
             int[][] board = ConvertBoard(generatedGame);
             BoardRequest validationRequest = new BoardRequest();
@@ -102,6 +123,17 @@
             {
                 sucessfulGeneration = true;
                 BoardRows = generatedGame;
+                foreach (BoardRow row in BoardRows)
+                {
+                    foreach (BoardElement element in row.RowElements)
+                    {
+                        if(element.Value != "")
+                        {
+                            element.IsReadonly = true;
+                            element.FontWeight = 700;
+                        }
+                    }
+                }
                 break;
             }
         }
@@ -112,18 +144,44 @@
     {
         foreach (BoardRow row in BoardRows)
         {
-            foreach (BoardElement element in row.RowElements)
+            for (int rowElement = 0; rowElement < boardSize; rowElement++)
             {
-                if (string.IsNullOrEmpty(element.Value) || element.Value == "0")
+                if (row.RowElements[rowElement].Value != "" && !row.RowElements[rowElement].IsReadonly)
                 {
-                    errorMessage = "Warning: you haven't filled all numbers yet.";
-                    return;
+                    row.RowElements[rowElement].CellColor = BoardElement.CellColors.white;
+
+                    foreach (BoardElement checkedEement in row.RowElements)
+                    {
+                        if (checkedEement != row.RowElements[rowElement] && checkedEement.Value == row.RowElements[rowElement].Value)
+                        {
+                            row.RowElements[rowElement].CellColor = BoardElement.CellColors.red;
+                        }
+                    }
+
+                    foreach(BoardRow checkedRow in BoardRows)
+                    {
+                        if (checkedRow != row && checkedRow.RowElements[rowElement].Value == row.RowElements[rowElement].Value)
+                        {
+                            row.RowElements[rowElement].CellColor = BoardElement.CellColors.red;
+                        }
+                    }
+
+                    int startRow = row.Id - row.Id % squareSize;
+                    int startCol = rowElement - rowElement % squareSize;
+                    for (int squareWidth = 0; squareWidth < 3; squareWidth++)
+                    {
+                        for (int squareHeight = 0; squareHeight < 3; squareHeight++)
+                        {
+                            if (BoardRows[squareWidth + startRow].RowElements[squareHeight + startCol].Value == row.RowElements[rowElement].Value && BoardRows[squareWidth + startRow].RowElements[squareHeight + startCol] != row.RowElements[rowElement])
+                            {
+                                row.RowElements[rowElement].CellColor = BoardElement.CellColors.red;
+                            }
+                        }
+                    }
+
                 }
             }
         }
-
-        SolveSudoku();
-
     }
 
     private int[][] ConvertBoard(List<BoardRow> boardRows)
@@ -153,7 +211,7 @@
 
     private void SolveSudoku()
     {
-        string unsolvableMsg = "Warning: This problem is unable to solve.";
+        string unsolvableMsg = "Warning: Some of the numbers are incorrect.";
         message = "";
         int[][] board = ConvertBoard(BoardRows);
         BoardRequest request = new BoardRequest();
@@ -199,6 +257,10 @@
             {
                 BoardElement newElement = new BoardElement();
                 newElement.Id = boardElementCount;
+                newElement.CellColor = BoardElement.CellColors.white;
+                newElement.IsReadonly = false;
+                newElement.FontWeight = 400;
+                newElement.Value = "";
                 boardElementCount++;
                 newRow.RowElements.Add(newElement);
             }

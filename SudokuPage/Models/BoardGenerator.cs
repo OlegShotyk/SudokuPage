@@ -15,7 +15,7 @@ namespace SudokuPage.Models
 			set { _board = value; }
 		}
 
-        public List<BoardRow> NewGame()
+        public List<BoardRow> NewGame(int hiddenValuesCount)
         {
             GenerateBoard();
             Random random = new Random();
@@ -23,20 +23,22 @@ namespace SudokuPage.Models
             {
                 ShuffleMap(random.Next(0, 5));
             }
-            HideValues();
+            HideValues(hiddenValuesCount);
             return Board;
         }
 
-        private void HideValues()
+        private void HideValues( int hiddenValuesCount)
         {
-            int hiddenValuesCount = 30;
             Random random = new Random();
             for(int rowIndex = 0; rowIndex < boardSize; rowIndex++)
             {
                 for(int columnIndex = 0; columnIndex < boardSize; columnIndex++)
                 {
-                    int randomValue = random.Next(0, 2);
-                    _board[rowIndex].RowElements[columnIndex].Value = randomValue == 0 ? "" : _board[rowIndex].RowElements[columnIndex].Value;
+                    int randomValue = random.Next(0, hiddenValuesCount);
+                    if (randomValue <= 4)
+                    {
+                        _board[rowIndex].RowElements[columnIndex].Value = "";
+                    }
                 }
             }
         }
