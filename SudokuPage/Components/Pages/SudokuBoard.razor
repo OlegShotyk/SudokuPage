@@ -4,14 +4,14 @@
 </div>
 <h3>Sudoku solver</h3>
 <label>Please enter your sudoku board:</label>
-<table class="table-bordered" width="450" height="100">
+<table class="table-bordered" width="450" height="100" style="border-color:black;">
     
     @foreach(BoardRow row in BoardRows)
     {
         <tr align="center">
             @foreach(BoardElement element in row.RowElements)
             {
-                <td width="50" height="50"><select class="text-center" type="text" @oninput="ValidateElement(element.Id, element.Value)" @bind="element.Value" maxlength="1"style="place-items:center; background-color:@element.CellColor.ToString(); font-weight:@element.FontWeight; width: 100%; height: 100%; text-align-last:right; padding-right:3px;">
+                <td width="50" height="50"><select class="form-control" type="text" @oninput="ValidateElement(element.Id, element.Value)" @bind="element.Value" maxlength="1"style="place-items:right; margin-right:5px; background-color:@element.CellColor.ToString(); border-color:black; font-weight:@element.FontWeight; width: 97%; height: 97%; text-align-last:center; padding-right:12px;">
                         <optgroup style="background-color:white;">
                             <option selected disabled hidden value=""></option>
                             <option hidden="@(element.IsReadonly)" value="1">1</option>
