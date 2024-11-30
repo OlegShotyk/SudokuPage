@@ -14,6 +14,7 @@
                 <td width="50" height="50"><select class="form-control" type="text" @oninput="ValidateElement(element.Id, element.Value)" @bind="element.Value" maxlength="1"style="place-items:right; margin-right:5px; background-color:@element.CellColor.ToString(); border-color:black; font-weight:@element.FontWeight; width: 97%; height: 97%; text-align-last:center; padding-right:12px;">
                         <optgroup style="background-color:white;">
                             <option selected disabled hidden value=""></option>
+                            <option @onchange="NullValueSelected(element.Id)" hidden="@(element.IsReadonly)">Clear</option>
                             <option hidden="@(element.IsReadonly)" value="1">1</option>
                             <option hidden="@(element.IsReadonly)" value="2">2</option>
                             <option hidden="@(element.IsReadonly)" value="3">3</option>
@@ -67,7 +68,10 @@
         }
         if(!int.TryParse(input, out int validInput))
         {
-            errorMessage = "Warning: only numbers are allowed on input!";
+            if(input != "Clear")
+            {
+                errorMessage = "Warning: only numbers are allowed on input!";
+            }
             foreach(BoardRow row in BoardRows)
             {
                 foreach (BoardElement element in row.RowElements)
@@ -75,8 +79,25 @@
                     if (element.Id == id)
                     {
                         element.Value = "";
+                        element.CellColor = BoardElement.CellColors.white;
                         break;
                     }
+                }
+            }
+        }
+        return EventCallback.Empty;
+    }
+
+    private EventCallback NullValueSelected(int elementId)
+    {
+        foreach(BoardRow row in BoardRows)
+        {
+            foreach(BoardElement element in row.RowElements)
+            {
+                if(element.Id == elementId && !int.TryParse(element.Value, out int elementValue))
+                {
+                    element.Value = "";
+                    break;
                 }
             }
         }
@@ -146,7 +167,11 @@
         {
             for (int rowElement = 0; rowElement < boardSize; rowElement++)
             {
-                if (row.RowElements[rowElement].Value != "" && !row.RowElements[rowElement].IsReadonly)
+                if (row.RowElements[rowElement].Value == "")
+                {
+                    row.RowElements[rowElement].CellColor = BoardElement.CellColors.white;
+                }
+                else if (!row.RowElements[rowElement].IsReadonly)
                 {
                     row.RowElements[rowElement].CellColor = BoardElement.CellColors.white;
 

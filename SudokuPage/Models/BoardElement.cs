@@ -1,4 +1,4 @@
-﻿namespace SudokuPage.Components.Pages
+﻿namespace SudokuPage.Models
 {
     public class BoardElement
     {
@@ -50,6 +50,5 @@
             get { return _fontWeight; }
             set { _fontWeight = value; }
         }
-
     }
 }

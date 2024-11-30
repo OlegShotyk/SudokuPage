@@ -1,4 +1,4 @@
-﻿namespace SudokuPage.Components.Pages
+﻿namespace SudokuPage.Models
 {
     public class BoardRow
     {
@@ -17,6 +17,5 @@
             get { return _rowElements; }
             set { _rowElements = value; }
         }
-
     }
 }
